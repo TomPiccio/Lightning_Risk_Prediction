@@ -174,3 +174,4 @@ cython_debug/
 .pypirc
 
 data/wind-speed-raw/
+data/air-temperature-raw/
