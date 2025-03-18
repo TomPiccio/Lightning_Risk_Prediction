@@ -25,8 +25,15 @@ def extract_datetime(message_div : BeautifulSoup):
 
 def extract_multiple_groups(text: str):
     # Define regex patterns for both formats
-    pattern_1 = r"([A-Za-z0-9,]+):(\d{4}-\d{4})"  # Format 1: '1N,L1,L2,...:1715-1800'
+    pattern_1 = r"([A-Za-z0-9,]+):\(?(\d{4}-\d{4})\)?" # Format 1: '1N,L1,L2,...:1715-1800'
     pattern_2 = r"\((\d{4}-\d{4})\)\n\s*([A-Za-z0-9,]+)"  # Format 2: '(1020-1100)\n L2,L3,L4,...'
+
+    #Standardize Format
+    text = re.sub(r' \(', r':(', text)  # Replace ' (' with ':('
+    text = re.sub(r'\(\n', r'(', text)   # Replace '(\n' with '('
+    text = re.sub(r'\n\)', r')', text)   # Replace '\n)' with ')'
+    text = re.sub(r'\n\)', r')', text)   # Replace '\n)' with ')'
+    text = re.sub(r":\n(\d{4}-\d{4})", r":\1", text)
     
     # Find all matches for both formats
     matches_1 = re.findall(pattern_1, text)
@@ -34,19 +41,30 @@ def extract_multiple_groups(text: str):
 
     result = []
 
-    # Process all matches for Format 1
-    for match in matches_1:
-        result.append({
-            "area_codes": match[0].split(','),
-            "time_range": match[1]
-        })
-    
-    # Process all matches for Format 2
-    for match in matches_2:
-        result.append({
-            "time_range": match[0],
-            "area_codes": match[1].split(',')
-        })
+    if len(matches_1) > 0  and len(matches_2)> 0:
+        print(matches_1,matches_2)
+
+    if len(matches_1) > len(matches_2):
+        # Process all matches for Format 1
+        for match in matches_1:
+            if "May" in match or "May" in match[0]:
+                print(matches_1)
+                break
+            result.append({
+                "area_codes": match[0].split(','),
+                "time_range": match[1]
+            })
+    else:
+        # Process all matches for Format 2
+        for match in matches_2:
+            
+            if "May" in match or "May" in match[0]:
+                print(matches_2,"2")
+                break
+            result.append({
+                "time_range": match[0],
+                "area_codes": match[1].split(',')
+            })
 
     return result
 
@@ -80,6 +98,9 @@ def row_generation(date: pd.Timestamp, time_range: str, groups: list):
     
     if not 'Clear' in groups:
         for group in groups:
+            group = group.lstrip("0")
+            if not group in codes:
+                print(group,start_str, end_str)
             row[group] = delta_minutes
     for column in columns:
         if column in row:
@@ -94,7 +115,8 @@ def process_file(source_file_path,file_num):
         soup = BeautifulSoup(f, "html.parser")
 
     # Find all div elements with class="text"
-    messages = soup.findall("div", class_=lambda x: x == "body")
+    messages = soup.find_all("div", class_=lambda x: x == "body")
+    
     dates = [extract_datetime(div) for div in messages]
     groups = [extract_multiple_groups(content.get_text(separator="\n")) if content != None else None for content in messages]
     data = []
@@ -110,12 +132,16 @@ def process_file(source_file_path,file_num):
             except Exception as e:
                 print("Error occured:",e)
                 print(group)
+    print(len(data))
     return data
 
 compiled_data = []
 
 for file_num in range(len(source_files)):
-    compiled_data.extend(process_file(source_files[file_num],file_num))
+    try:
+        compiled_data.extend(process_file(source_files[file_num],file_num))
+    except Exception as e:
+        print(source_files[file_num],e)
 
 #Initialize columns
 df = pd.DataFrame(compiled_data)
@@ -130,6 +156,10 @@ for code in codes:
         print(code,"is missing")
     df[code] = df[code].astype(int)  # Ensure the code columns are integers
 df.fillna(0, inplace=True)
-df.sort_values(by="DateTime", inplace=True)
-df.to_csv(os.path.join(output_folder,"lightning_risk_data_mins.csv"),index=False)
+df["DateTime"] = df["DateTime"].dt.strftime("%Y-%m-%dT%H:%M:%S+08:00")
+df_agg = df.groupby(["DateTime", "Date", "Time"], as_index=False).max()
+
+# Save to CSV
+df_agg.sort_values(by="DateTime", inplace=True)
+df_agg.to_csv(os.path.join(output_folder,"lightning_risk_data_mins.csv"),index=False)
 
