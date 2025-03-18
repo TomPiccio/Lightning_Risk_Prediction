@@ -6,7 +6,7 @@ import json
 import os
 
 # API settings
-READING_TYPE = "air-temperature"
+READING_TYPE = "relative-humidity"
 BASE_URL = f"https://api-open.data.gov.sg/v2/real-time/api/{READING_TYPE}"
 start_date = datetime(2020, 4, 20)
 end_date = datetime(2025, 2, 17)
@@ -14,7 +14,7 @@ end_date = datetime(2025, 2, 17)
 # Store data
 weather_data_list = []
 
-def store_weather_data(new_data, folder_path, date: datetime):
+async def store_weather_data(new_data, folder_path, date: datetime):
     '''save the data as a json file'''
 
     # create the folder if it doesn't exist
@@ -40,12 +40,12 @@ async def fetch_weather_async(session, date):
             return None
 
 async def main():
-    folder_path = "data/air-temperature/"
+    folder_path = "data/relative-humidity-raw/"
 
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_weather_async(session, start_date + timedelta(days=i)) for i in range((end_date - start_date).days + 1)]
         results = await asyncio.gather(*tasks)
         for i, data in enumerate(results):
-            store_weather_data(data, folder_path, start_date + timedelta(days=i))
+            await store_weather_data(data, folder_path, start_date + timedelta(days=i))
 
 asyncio.run(main())
