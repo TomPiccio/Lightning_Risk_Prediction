@@ -1,1 +1,1 @@
-GET https://api-open.data.gov.sg/v2/real-time/api/relative-humidity?date=2020-04-20
+GET https://api-open.data.gov.sg/v2/real-time/api/rainfall?date=2024-04-20

@@ -6,7 +6,7 @@ import json
 import os
 
 # API settings
-READING_TYPE = "relative-humidity"
+READING_TYPE = "rainfall"
 BASE_URL = f"https://api-open.data.gov.sg/v2/real-time/api/{READING_TYPE}"
 start_date = datetime(2020, 4, 20)
 end_date = datetime(2025, 2, 17)
@@ -40,7 +40,7 @@ async def fetch_weather_async(session, date):
             return None
 
 async def main():
-    folder_path = "data/relative-humidity-raw/"
+    folder_path = "data/rainfall-raw/"
 
     async with aiohttp.ClientSession() as session:
         tasks = [fetch_weather_async(session, start_date + timedelta(days=i)) for i in range((end_date - start_date).days + 1)]
