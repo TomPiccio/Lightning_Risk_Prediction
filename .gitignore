@@ -174,3 +174,8 @@ cython_debug/
 .pypirc
 
 data/*
+
+!data/final_data
+!relative-humidity-table.csv
+!wind-speed-table.csv
+!air-temperature-table.csv
