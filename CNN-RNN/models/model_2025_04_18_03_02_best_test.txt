@@ -1,2 +1,2 @@
-Best Validation Accuracy: 99.01%
-Test Accuracy at Best Val: 92.38%
+Best Validation Accuracy: 9.18%
+Test Accuracy at Best Val: 70.64%
