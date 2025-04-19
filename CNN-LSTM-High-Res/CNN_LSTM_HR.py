@@ -61,6 +61,7 @@ class CNN_LSTM_HR_Dataset(Dataset):
 
         # Drop target for input features
         input_df = self.compiled_df.drop(columns=["Lightning_Risk"])
+
         
         # Valid 2-hour timestamps
         min_ts = self.compiled_df.index.min().ceil("2h") + pd.Timedelta(hours=2)

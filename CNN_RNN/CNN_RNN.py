@@ -15,6 +15,24 @@ import re
 from sklearn.metrics import precision_score, recall_score, f1_score
 from torch.utils.data import ConcatDataset, TensorDataset
 
+def tabular_to_image(data: pd.DataFrame, pixel_coords, image_shape=(9, 18)):
+    feature_types = ['rainfall', 'air_temperature', 'wind_speed', 'relative_humidity', 'wind_direction']
+    H, W = image_shape
+    T = data.shape[0]
+    image = np.full((T, H, W, len(feature_types)), np.nan, dtype=np.float32)
+
+    feature_to_channel = {feat: i for i, feat in enumerate(feature_types)}
+
+    for y, x, station_id in pixel_coords:
+        for feat in feature_types:
+            col_name = f"{feat}_{station_id}"
+            if col_name in data.columns:
+                channel = feature_to_channel[feat]
+                image[:, y, x, channel] = data[col_name].values
+
+    return image if T > 1 else image[0]
+
+
 class CNN_RNN_Dataset(Dataset):
     def __init__(self, compiled_df, pixel_coords, image_shape=(9, 18), timezone_str="Asia/Singapore", reject_zeros=True):
         self.compiled_df = compiled_df.copy()
@@ -26,23 +44,6 @@ class CNN_RNN_Dataset(Dataset):
         self.rejected_samples = []
 
         self._prepare_dataset()
-
-    def tabular_to_image(self, data: pd.DataFrame, pixel_coords, image_shape=(9, 18)):
-        feature_types = ['rainfall', 'air_temperature', 'wind_speed', 'relative_humidity', 'wind_direction']
-        H, W = image_shape
-        T = data.shape[0]
-        image = np.full((T, H, W, len(feature_types)), np.nan, dtype=np.float32)
-
-        feature_to_channel = {feat: i for i, feat in enumerate(feature_types)}
-
-        for y, x, station_id in pixel_coords:
-            for feat in feature_types:
-                col_name = f"{feat}_{station_id}"
-                if col_name in data.columns:
-                    channel = feature_to_channel[feat]
-                    image[:, y, x, channel] = data[col_name].values
-
-        return image if T > 1 else image[0]
 
     def _prepare_dataset(self):
         # Ensure datetime index
@@ -69,7 +70,7 @@ class CNN_RNN_Dataset(Dataset):
                 # Input time windows (past 5)
                 input_times = [timestamp - pd.Timedelta(minutes=delta) for delta in [120, 90, 60, 30, 0]]
                 input_slices = self.compiled_df.loc[input_times]
-                input_images = self.tabular_to_image(input_slices, self.pixel_coords, self.image_shape)  # (5, H, W, C)
+                input_images = tabular_to_image(input_slices, self.pixel_coords, self.image_shape)  # (5, H, W, C)
 
                 # Rearrange to (C, T, H, W) if needed
                 input_tensor = np.transpose(input_images, (3, 0, 1, 2))  # (C, T, H, W)
