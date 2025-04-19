@@ -179,3 +179,5 @@ data/*
 !relative-humidity-table.csv
 !wind-speed-table.csv
 !air-temperature-table.csv
+
+*.pt
