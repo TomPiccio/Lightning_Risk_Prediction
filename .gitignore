@@ -181,3 +181,8 @@ data/*
 !air-temperature-table.csv
 
 *.pt
+
+Group_15_Deep_learning*
+Group_15_Deep_learning.zip
+CNN_GRU.pth
+model_2025_04_19_23_25_best.pth
