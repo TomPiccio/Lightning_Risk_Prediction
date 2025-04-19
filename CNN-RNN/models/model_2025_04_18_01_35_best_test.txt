@@ -1,2 +1,0 @@
-Best Validation Accuracy: 70.17%
-Test Accuracy at Best Val: 72.98%
